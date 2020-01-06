@@ -1,10 +1,13 @@
 #
 # Dependance:
 #  google_container_node_pool.primary_nodes
+#  null_resource.export-custom-routes
 #
 
 
 resource "null_resource" "configure_kubectl" {
+  depends_on = [null_resource.configure_kubectl,google_container_node_pool.primary_nodes,null_resource.export-custom-routes]
+
   provisioner "local-exec" {
     command = "gcloud container clusters get-credentials ${google_container_cluster.primary.name} --region ${google_container_cluster.primary.location} --project ${google_container_cluster.primary.project}"
   }

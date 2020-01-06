@@ -1,6 +1,9 @@
 #
 # Dependance:
 #
+# Sub-Dependance:
+#   resource "null_resource" "export-custom-routes" : google_sql_database_instance.master
+#
 #
 
 
@@ -28,8 +31,8 @@ resource "google_service_networking_connection" "private_vpc_connection" {
   reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
 }
 
-resource "google_compute_network_peering" "peering1" {
-  name         = "cloudsql-mysql-googleapis-com"
-  network      = google_compute_network.private_network.self_link
-  peer_network = *********************
+resource "null_resource" "export-custom-routes" {
+  provisioner "local-exec" {
+    command = "gcloud compute networks peerings update cloudsql-mysql-googleapis-com --network ${var.network-name} --export-custom-routes --region ${google_sql_database_instance.master.region} --project ${google_sql_database_instance.master.project}"
+  }
 }
