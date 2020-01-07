@@ -3,11 +3,10 @@
 #  google_compute_network.private_network
 #
 
-
 resource "google_filestore_instance" "instance" {
   name = "nfsshare-${random_id.db_name_suffix.hex}"
   tier = "STANDARD"
-  zone    = "us-east1-b"
+  zone = "us-east1-b"
 
   file_shares {
     capacity_gb = 2048
@@ -19,3 +18,4 @@ resource "google_filestore_instance" "instance" {
     modes   = ["MODE_IPV4"]
   }
 }
+

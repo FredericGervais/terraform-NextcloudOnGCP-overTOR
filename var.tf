@@ -21,15 +21,15 @@ variable "app-name" {
 provider "google" {
   credentials = file("credential.json")
 
-  region  = var.region
-  zone    = var.zone
+  region = "var.region"
+  zone   = "var.zone"
 }
 
 provider "google-beta" {
   credentials = file("credential.json")
 
-  region  = var.region
-  zone    = var.zone
+  region = "var.region"
+  zone   = "var.zone"
 }
 
 variable "network-name" {
@@ -48,3 +48,4 @@ resource "random_id" "db_user_password" {
 resource "random_id" "cluster_name_suffix" {
   byte_length = 4
 }
+

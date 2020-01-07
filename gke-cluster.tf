@@ -4,9 +4,8 @@
 #  var.region
 #
 
-
 resource "google_project_service" "kubernetes" {
-  service = "container.googleapis.com"
+  service            = "container.googleapis.com"
   disable_on_destroy = false
 }
 
@@ -15,7 +14,10 @@ resource "google_container_cluster" "primary" {
 
   name     = "terraform-owncloud-${random_id.cluster_name_suffix.hex}"
   location = var.region
-  depends_on = [google_compute_network.private_network,google_project_service.kubernetes]
+  depends_on = [
+    google_compute_network.private_network,
+    google_project_service.kubernetes,
+  ]
   network = google_compute_network.private_network.self_link
 
   # We can't create a cluster with no node pool defined, but we want to only use
@@ -28,13 +30,13 @@ resource "google_container_cluster" "primary" {
     enabled = true
     resource_limits {
       resource_type = "cpu"
-      maximum = 64
-      minimum = 1
+      maximum       = 64
+      minimum       = 1
     }
     resource_limits {
       resource_type = "memory"
-      maximum = 96
-      minimum = 1
+      maximum       = 96
+      minimum       = 1
     }
   }
 
@@ -49,9 +51,9 @@ resource "google_container_cluster" "primary" {
 }
 
 resource "google_container_node_pool" "primary_nodes" {
-  name       = "node-pool"
-  location   = var.region
-  cluster    = google_container_cluster.primary.name
+  name     = "node-pool"
+  location = var.region
+  cluster  = google_container_cluster.primary.name
 
   # This makes sure the node count reaches at least 1 before flagging this resource as ready
   # It is necessary or else deploying a Pod right after would end with an error linked to the Pod not being schedulable
@@ -66,3 +68,4 @@ resource "google_container_node_pool" "primary_nodes" {
     ]
   }
 }
+

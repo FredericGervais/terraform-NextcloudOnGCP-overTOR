@@ -4,9 +4,11 @@
 #  null_resource.export-custom-routes
 #
 
-
 resource "null_resource" "configure_kubectl" {
-  depends_on = [google_container_node_pool.primary_nodes,null_resource.export-custom-routes]
+  depends_on = [
+    google_container_node_pool.primary_nodes,
+    null_resource.export-custom-routes,
+  ]
 
   provisioner "local-exec" {
     command = "gcloud container clusters get-credentials ${google_container_cluster.primary.name} --region ${google_container_cluster.primary.location} --project ${google_container_cluster.primary.project}"
@@ -14,14 +16,13 @@ resource "null_resource" "configure_kubectl" {
 }
 
 provider "kubernetes" {
-  depends_on = [null_resource.configure_kubectl]
 }
 
 resource "kubernetes_secret" "database-credentials" {
   depends_on = [null_resource.configure_kubectl]
 
   metadata {
-    name = "database-credentials"
+    name = "database-credentials-${random_id.cluster_name_suffix.hex}"
   }
 
   data = {
@@ -29,7 +30,6 @@ resource "kubernetes_secret" "database-credentials" {
     OWNCLOUD_DB_PASSWORD = google_sql_user.users.password
   }
 }
-
 
 resource "kubernetes_deployment" "application" {
   depends_on = [kubernetes_secret.database-credentials]
@@ -65,7 +65,7 @@ resource "kubernetes_deployment" "application" {
             container_port = 8080
           }
           volume_mount {
-            name = "nfs-volume"
+            name       = "nfs-volume"
             mount_path = "/mnt/data"
           }
           env {
@@ -89,20 +89,20 @@ resource "kubernetes_deployment" "application" {
             value = "true"
           }
           env {
-            name  = "OWNCLOUD_DB_USERNAME"
+            name = "OWNCLOUD_DB_USERNAME"
             value_from {
               secret_key_ref {
-              name = "database-credentials"
-              key = "OWNCLOUD_DB_USERNAME"
+                name = "database-credentials-${random_id.cluster_name_suffix.hex}"
+                key  = "OWNCLOUD_DB_USERNAME"
               }
             }
           }
           env {
-            name  = "OWNCLOUD_DB_PASSWORD"
+            name = "OWNCLOUD_DB_PASSWORD"
             value_from {
               secret_key_ref {
-              name = "database-credentials"
-              key = "OWNCLOUD_DB_PASSWORD"
+                name = "database-credentials-${random_id.cluster_name_suffix.hex}"
+                key  = "OWNCLOUD_DB_PASSWORD"
               }
             }
           }
@@ -116,12 +116,11 @@ resource "kubernetes_deployment" "application" {
               memory = "256Mi"
             }
           }
-          
         }
         volume {
           name = "nfs-volume"
           nfs {
-            path = "/${google_filestore_instance.instance.file_shares[0].name}"
+            path   = "/${google_filestore_instance.instance.file_shares[0].name}"
             server = google_filestore_instance.instance.networks[0].ip_addresses[0]
           }
         }
@@ -134,7 +133,7 @@ resource "kubernetes_service" "expose" {
   depends_on = [null_resource.configure_kubectl]
 
   metadata {
-    name = "expose-${var.app-name}"
+    name = "expose-${var.app-name}-${random_id.cluster_name_suffix.hex}"
   }
   spec {
     selector = {

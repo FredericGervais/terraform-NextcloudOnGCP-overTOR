@@ -6,7 +6,6 @@
 #
 #
 
-
 resource "google_compute_network" "private_network" {
   provider = google-beta
 
@@ -36,3 +35,4 @@ resource "null_resource" "export-custom-routes" {
     command = "gcloud compute networks peerings update cloudsql-mysql-googleapis-com --network ${var.network-name} --export-custom-routes --project ${google_sql_database_instance.master.project}"
   }
 }
+
