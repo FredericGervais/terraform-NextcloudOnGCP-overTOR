@@ -7,6 +7,8 @@
 resource "null_resource" "configure_kubectl" {
   depends_on = [
     google_container_node_pool.primary_nodes,
+    google_sql_database_instance.master,
+    google_filestore_instance.instance,
     null_resource.export-custom-routes
   ]
 
