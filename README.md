@@ -1,5 +1,12 @@
 # terraform-OwncloudOnGCP
 
+This is a Terraform script that installs Owncloud in a GCP Project. It uses these products:  
+- Network  
+- Filestore  
+- Cloud SQL  
+- GKE cluster  
+- Owncloud docker image  
+
 ## Prerequisite
 
 Once in your [GCP Cloud Shell](https://console.cloud.google.com/home/dashboard?cloudshell=true), be sure to be connected to your project you want to deploy this solution too.
