@@ -7,7 +7,7 @@
 resource "null_resource" "configure_kubectl" {
   depends_on = [
     google_container_node_pool.primary_nodes,
-    null_resource.export-custom-routes,
+    null_resource.export-custom-routes
   ]
 
   provisioner "local-exec" {
