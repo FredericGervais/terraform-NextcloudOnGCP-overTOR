@@ -23,5 +23,5 @@ You now need to place the [Service Account key .json file](https://learn.hashico
 
 To install Owncloud you now need to run this command:
 ```
-terraform apply -auto-approve -target=google_sql_database_instance.master -target=google_filestore_instance.instance -target=null_resource.configure_kubectl && terraform apply -auto-approve
+terraform apply -auto-approve -target=null_resource.configure_kubectl && terraform apply -auto-approve
 ```
