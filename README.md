@@ -26,6 +26,8 @@ terraform init
 You now need to place the [Service Account key .json file](https://learn.hashicorp.com/terraform/gcp/build) in the current folder beside the .tf files under the name:
 > credential.json
 
+**Make sure the terraform service account has the Project Owner role**
+
 ## Installation
 
 To install Owncloud you now need to run this command:
