@@ -18,6 +18,11 @@ variable "app-name" {
   default = "owncloud"
 }
 
+variable "onion-address" {
+  type    = string
+  default = "cloud"
+}
+
 provider "google" {
   credentials = file("credential.json")
 
