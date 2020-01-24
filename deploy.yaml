@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: owncloud
+  name: owncloud-deployment
+  namespace: default
+spec:
+  automountServiceAccountToken: false
+  containers:
+  - env:
+    - name: OWNCLOUD_DB_TYPE
+      value: mysql
+    - name: OWNCLOUD_DB_HOST
+      value: 10.105.0.2
+    - name: OWNCLOUD_DB_NAME
+      value: owncloud
+    - name: OWNCLOUD_DB_PREFIX
+      value: oc_
+    - name: OWNCLOUD_MYSQL_UTF8MB4
+      value: "true"
+    - name: OWNCLOUD_DB_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: OWNCLOUD_DB_USERNAME
+          name: database-credentials-ccbf6e4c
+    - name: OWNCLOUD_DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: OWNCLOUD_DB_PASSWORD
+          name: database-credentials-ccbf6e4c
+    image: owncloud/server:latest
+    imagePullPolicy: Always
+    name: owncloud
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    resources:
+      limits:
+        cpu: "2"
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /mnt/data
+      mountPropagation: None
+      name: nfs-volume
+  - command: ["/bin/sh", "-c"]
+    args: ["logger -s '*****************************';
+      logger -s 'Configuring the tor container';
+      logger -s '*****************************';
+      apk add --no-cache git libevent-dev openssl-dev gcc make automake ca-certificates autoconf musl-dev coreutils zlib-dev; logger -s 'Downloading tor';
+      git clone https://git.torproject.org/tor.git /home/tor;
+      logger -s 'Running autogen.sh';
+      cd /home/tor;
+      logger -s $(pwd);
+      /home/tor/autogen.sh;
+      logger -s 'Running ./configure';
+      /home/tor/configure --disable-asciidoc --sysconfdir=/etc --disable-unittests;
+      logger -s 'Running make';
+      make -C /home/tor;
+      make install -C /home/tor;
+      rm -rf /home/tor;
+      apk del git libevent-dev openssl-dev make automake python3-dev autoconf musl-dev coreutils;
+      mv /etc/tor/torrc.sample /etc/tor/torrc;
+      logger -s 'Editing /etc/tor/torrc';
+      sed -i 's/#HiddenServiceDir \\/usr\\/local\\/var\\/lib\\/tor\\/hidden_service\\//HiddenServiceDir \\/lib\\/tor\\/hidden_service\\//' /etc/tor/torrc;
+      sed -i '/HiddenServiceDir \\/lib\\/tor\\/hidden_service\\//a HiddenServicePort 80 website:80' /etc/tor/torrc;
+      mkdir /lib/tor/hidden_service;
+      echo -e $private > /lib/tor/hidden_service;
+      logger -s 'Starting tor ...';
+      tor"]
+    image: alpine:latest
+    imagePullPolicy: Always
+    name: tor
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 50Mi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gke-terraform-owncloud-ccbf-node-pool-1220e0e1-98j2
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  shareProcessNamespace: false
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: nfs-volume
+    nfs:
+      path: /NFSvol
+      server: 10.120.122.18
