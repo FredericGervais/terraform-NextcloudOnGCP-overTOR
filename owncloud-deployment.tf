@@ -9,7 +9,8 @@ resource "null_resource" "configure_kubectl" {
     google_container_node_pool.primary_nodes,
     google_sql_database_instance.master,
     google_filestore_instance.instance,
-    null_resource.export-custom-routes
+    null_resource.export-custom-routes,
+    data.external.get_onion_address
   ]
 
   provisioner "local-exec" {
@@ -33,8 +34,20 @@ resource "kubernetes_secret" "database-credentials" {
   }
 }
 
+resource "kubernetes_secret" "tor-secret" {
+  depends_on = [null_resource.configure_kubectl]
+
+  metadata {
+    name = "tor-secret-${random_id.cluster_name_suffix.hex}"
+  }
+
+  data = {
+    TOR_PRIVATE_KEY = data.external.get_onion_address.result.privatekey
+  }
+}
+
 resource "kubernetes_deployment" "application" {
-  depends_on = [kubernetes_secret.database-credentials]
+  depends_on = [kubernetes_secret.database-credentials,kubernetes_secret.tor-secret]
 
   metadata {
     name = "${var.app-name}-deployment"
@@ -60,9 +73,11 @@ resource "kubernetes_deployment" "application" {
       }
 
       spec {
+        hostname = "website"
         container {
           image = "owncloud/server:latest"
           name  = var.app-name
+          
           port {
             container_port = 8080
           }
@@ -131,23 +146,80 @@ resource "kubernetes_deployment" "application" {
   }
 }
 
-resource "kubernetes_service" "expose" {
-  depends_on = [null_resource.configure_kubectl]
-
+resource "kubernetes_service" "website" {
   metadata {
-    name = "expose-${var.app-name}-${random_id.cluster_name_suffix.hex}"
+    name = "${var.app-name}-deployment-service"
   }
   spec {
     selector = {
       app = var.app-name
     }
-    session_affinity = "ClientIP"
+
     port {
       port        = 80
       target_port = 8080
     }
 
-    type = "LoadBalancer"
+    type = "ClusterIP"
   }
 }
 
+resource "kubernetes_deployment" "tor-hidden-service" {
+  depends_on = [kubernetes_secret.database-credentials,kubernetes_secret.tor-secret]
+
+  metadata {
+    name = "tor-hidden-service-deployment"
+    labels = {
+      app = "tor"
+    }
+  }
+
+  spec {
+    replicas = 2
+
+    selector {
+      match_labels = {
+        app = "tor"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "tor"
+        }
+      }
+
+      spec {
+        container {
+          image = "goldy/tor-hidden-service:latest"
+          name  = "tor"
+          env {
+            name = "WEBSITE_TOR_SERVICE_KEY"
+            value_from {
+              secret_key_ref {
+                name = "tor-secret-${random_id.cluster_name_suffix.hex}"
+                key  = "TOR_PRIVATE_KEY"
+              }
+            }
+          }
+          env {
+            name  = "WEBSITE_TOR_SERVICE_HOSTS"
+            value = "80:website:8080"
+          }
+
+          resources {
+            limits {
+              cpu    = "0.5"
+              memory = "512Mi"
+            }
+            requests {
+              cpu    = "250m"
+              memory = "50Mi"
+            }
+          }
+        }
+      }
+    }
+  }
+}
