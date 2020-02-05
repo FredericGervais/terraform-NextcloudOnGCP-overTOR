@@ -15,7 +15,7 @@ variable "zone" {
 
 variable "app-name" {
   type    = string
-  default = "owncloud"
+  default = "nextcloud"
 }
 
 variable "onion-address" {
@@ -54,3 +54,15 @@ resource "random_id" "cluster_name_suffix" {
   byte_length = 4
 }
 
+resource "random_id" "nextcloud_admin_user" {
+  byte_length = 4
+}
+
+variable "nextcloud_admin_user" {
+  type    = string
+  default = "admin"
+}
+
+resource "random_id" "nextcloud_admin_password" {
+  byte_length = 20
+}
