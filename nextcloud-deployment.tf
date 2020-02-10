@@ -101,7 +101,7 @@ resource "kubernetes_deployment" "application" {
           }
           env {
             name  = "NEXTCLOUD_TRUSTED_DOMAINS"
-            value = data.external.get_onion_address.result.hostname
+            value = "${data.external.get_onion_address.result.hostname} ${data.external.get_private_ip_trusted_domain.result.domain}"
           }
           env {
             name  = "MYSQL_HOST"

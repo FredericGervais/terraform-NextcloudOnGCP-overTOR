@@ -9,6 +9,11 @@ resource "google_project_service" "kubernetes" {
   disable_on_destroy = false
 }
 
+data "external" "get_private_ip_trusted_domain" {
+
+    program = ["bash", "generate.sh", "get_private_ip_trusted_domain", "${google_container_cluster.primary.cluster_ipv4_cidr}"]
+}
+
 resource "google_container_cluster" "primary" {
   provider = google-beta
 

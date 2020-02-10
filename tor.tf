@@ -16,18 +16,10 @@ resource "null_resource" "make_eschalot" {
   }
 }
 
-resource "null_resource" "modify_generate_script" {
+data "external" "get_onion_address" {
     depends_on = [null_resource.make_eschalot]
 
-  provisioner "local-exec" {
-    command = "sed -i 's/STRING/${var.onion-address}/g' generate.sh"
-  }
-}
-
-data "external" "get_onion_address" {
-    depends_on = [null_resource.modify_generate_script]
-
-    program = ["bash", "generate.sh"]
+    program = ["bash", "generate.sh", "generate_private_key", "${var.onion-address}"]
 }
 
 
