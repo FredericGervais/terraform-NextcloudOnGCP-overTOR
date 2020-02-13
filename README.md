@@ -33,7 +33,7 @@ You now need to place the [Service Account key .json file](https://learn.hashico
 
 To install Nextcloud you now need to run this command:
 ```
-terraform apply -auto-approve -target=null_resource.configure_kubectl && terraform apply -auto-approve
+terraform apply -auto-approve -target=null_resource.configure_kubectl && terraform apply -auto-approve -refresh=false
 ```
 
 ## Usage
